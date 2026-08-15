@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client-js"
+  // relationJoins lets a nested select resolve as one SQL LATERAL JOIN instead
+  // of a query per relation. The database is remote (~1.3s per round trip), so
+  // collapsing a page load into a single query is the difference between a
+  // ~1.3s and a ~4s render.
+  previewFeatures = ["relationJoins"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+/// Allowlisted users. Rows are created either by scripts/add-user.ts or by an
+/// existing admin through /users — never by self-registration. There is no
+/// public signup route, and the login page links to nothing that creates a user.
+model User {
+  id             String             @id @default(cuid())
+  name           String             @unique
+  passphraseHash String
+  /// Admins can add and remove other users. Non-admins only see their own
+  /// portfolio. The first user created by the CLI is an admin.
+  isAdmin        Boolean            @default(false)
+  createdAt      DateTime           @default(now())
+  stocks         Stock[]
+  settings       PortfolioSettings?
+}
+
+model Stock {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name            String
+  ticker          String
+  theme           String
+  targetPct       Float
+  price           Float
+  shares          Int       @default(0)
+  /// Set when a price came from the live fetcher; null means the price is seed
+  /// data or a manual entry that has never been refreshed.
+  lastPriceUpdate DateTime?
+
+  @@unique([userId, ticker])
+  @@index([userId])
+}
+
+model PortfolioSettings {
+  userId                String @id
+  user                  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalInvestmentTarget Float
+}
+
+/// Server-side price cache, shared across all users so one refresh serves
+/// everyone. Keyed by ticker, not by user.
+model PriceCache {
+  ticker    String   @id
+  price     Float
+  fetchedAt DateTime
+  /// Which provider supplied this price, so the UI can say where a number
+  /// came from and a provider outage is diagnosable.
+  source    String   @default("yahoo")
+}
+
+/// NSE ticker → Upstox instrument key (`NSE_EQ|<ISIN>`), which is what the
+/// Upstox quote API addresses instruments by.
+///
+/// Cached here because the mapping only exists in a ~2 MB gzipped master file;
+/// downloading that per request would dwarf the quote call it enables.
+model Instrument {
+  ticker        String   @id
+  instrumentKey String
+  name          String
+  updatedAt     DateTime @updatedAt
+}

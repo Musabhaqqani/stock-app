@@ -1,0 +1,18 @@
+node_modules/
+.next/
+out/
+build/
+dist/
+
+# Secrets — Neon connection string and session secret live here
+.env
+.env.local
+.env*.local
+
+next-env.d.ts
+*.tsbuildinfo
+
+.DS_Store
+*.pem
+npm-debug.log*
+.vercel
