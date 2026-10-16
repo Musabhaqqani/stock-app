@@ -25,7 +25,7 @@ export function EditableNumber({
   align = "right",
 }: {
   id: string;
-  field: "price" | "shares" | "targetPct";
+  field: "price" | "shares" | "targetPct" | "buyPrice";
   value: number;
   step?: string;
   label: string;
@@ -57,6 +57,9 @@ export function EditableNumber({
         inputMode="decimal"
         step={step}
         min="0"
+        // Keyed on value: defaultValue is only read on mount, so without this the
+        // field keeps showing the old number after another action changes it.
+        key={value}
         defaultValue={value}
         aria-label={label}
         disabled={pending}

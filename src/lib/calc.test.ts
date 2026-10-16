@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildPortfolioView, buyNextRanking, type Holding } from "./calc";
+import { averageIn, sellOut, buildPortfolioView, buyNextRanking, type Holding } from "./calc";
 
 function holding(overrides: Partial<Holding> = {}): Holding {
   return {
@@ -10,6 +10,7 @@ function holding(overrides: Partial<Holding> = {}): Holding {
     targetPct: 50,
     price: 100,
     shares: 1,
+    buyPrice: 0,
     lastPriceUpdate: null,
     ...overrides,
   };
@@ -138,5 +139,25 @@ describe("buyNextRanking", () => {
     );
 
     expect(buyNextRanking(view.rows)).toEqual([]);
+  });
+});
+
+describe("averageIn", () => {
+  it("weights the average by quantity", () => {
+    // 10 @ 100 then 10 @ 80 → 20 @ 90
+    expect(averageIn(10, 100, 10, 80)).toEqual({ shares: 20, buyPrice: 90 });
+    // 1 @ 1000 then 3 @ 600 → 4 @ 700
+    expect(averageIn(1, 1000, 3, 600)).toEqual({ shares: 4, buyPrice: 700 });
+  });
+
+  it("uses the lot price when there was no prior average", () => {
+    expect(averageIn(0, 0, 5, 250)).toEqual({ shares: 5, buyPrice: 250 });
+  });
+});
+
+describe("sellOut", () => {
+  it("keeps the average and clamps at zero", () => {
+    expect(sellOut(10, 90, 4)).toEqual({ shares: 6, buyPrice: 90 });
+    expect(sellOut(10, 90, 15)).toEqual({ shares: 0, buyPrice: 0 });
   });
 });

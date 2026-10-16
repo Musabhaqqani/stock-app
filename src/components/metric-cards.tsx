@@ -38,11 +38,21 @@ export function MetricCards({ view }: { view: PortfolioView }) {
   const belowTarget = view.rows.filter((r) => r.sharesToBuyNext > 0).length;
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
       <Metric
         label="Current value"
         value={formatINR(view.totalCurrentValue)}
         hint={`${investedPct.toFixed(1)}% of target`}
+      />
+
+      <Metric
+        label="Invested"
+        value={view.totalPnl === null ? "—" : formatINR(view.totalInvested)}
+        hint={
+          view.totalPnl === null
+            ? "Enter a buy price on a holding"
+            : `P&L ${view.totalPnl >= 0 ? "+" : ""}${formatINR(view.totalPnl)} (${view.totalInvested > 0 ? ((view.totalPnl / view.totalInvested) * 100).toFixed(1) : "0.0"}%)`
+        }
       />
 
       <TargetInvestmentCard value={view.totalInvestmentTarget} />

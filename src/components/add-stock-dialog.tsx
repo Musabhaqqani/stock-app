@@ -136,6 +136,20 @@ export function AddStockDialog({ triggerLabel }: { triggerLabel?: string }) {
               />
             </div>
 
+            <div>
+              <Label htmlFor="add-buy-price">Bought at (₹/share)</Label>
+              <Input
+                id="add-buy-price"
+                name="buyPrice"
+                type="number"
+                inputMode="decimal"
+                min="0"
+                step="0.05"
+                defaultValue={0}
+                className="mt-1.5 font-mono"
+              />
+            </div>
+
             {/* Seeds the price so the row isn't blank before the first fetch. */}
             <input type="hidden" name="price" value={picked?.price ?? 0} />
           </div>

@@ -11,11 +11,17 @@ export type Holding = {
   targetPct: number;
   price: number;
   shares: number;
+  /** Average price paid per share. 0 = not entered, so P&L is unknown. */
+  buyPrice: number;
   lastPriceUpdate: Date | string | null;
 };
 
 export type HoldingRow = Holding & {
   currentValue: number;
+  /** buyPrice × shares; 0 when no buy price is entered. */
+  investedValue: number;
+  /** currentValue − investedValue, or null when no buy price is entered. */
+  pnl: number | null;
   currentWeightPct: number;
   targetValue: number;
   targetShares: number;
@@ -28,6 +34,10 @@ export type HoldingRow = Holding & {
 export type PortfolioView = {
   rows: HoldingRow[];
   totalCurrentValue: number;
+  /** Sum of investedValue over holdings that have a buy price. */
+  totalInvested: number;
+  /** P&L over holdings that have a buy price; null if none do. */
+  totalPnl: number | null;
   totalInvestmentTarget: number;
   /** What it would cost to buy every share in the buy-next list. */
   costToCloseGaps: number;
@@ -69,9 +79,14 @@ export function buildPortfolioView(
 
     const sharesToBuyNext = Math.max(targetShares - h.shares, 0);
 
+    const hasCost = h.buyPrice > 0;
+    const investedValue = hasCost ? h.buyPrice * h.shares : 0;
+
     return {
       ...h,
       currentValue,
+      investedValue,
+      pnl: hasCost ? currentValue - investedValue : null,
       currentWeightPct,
       targetValue,
       targetShares,
@@ -85,9 +100,15 @@ export function buildPortfolioView(
     .map((h) => (h.lastPriceUpdate ? new Date(h.lastPriceUpdate) : null))
     .filter((d): d is Date => d !== null && !Number.isNaN(d.getTime()));
 
+  const costed = rows.filter((r) => r.pnl !== null);
+
   return {
     rows,
     totalCurrentValue,
+    totalInvested: costed.reduce((sum, r) => sum + r.investedValue, 0),
+    totalPnl: costed.length
+      ? costed.reduce((sum, r) => sum + (r.pnl ?? 0), 0)
+      : null,
     totalInvestmentTarget,
     costToCloseGaps: rows.reduce((sum, r) => sum + r.costToBuyNext, 0),
     totalTargetPct: holdings.reduce((sum, h) => sum + h.targetPct, 0),
@@ -121,4 +142,32 @@ export function formatINR(value: number): string {
 
 export function formatPct(value: number, digits = 1): string {
   return `${value.toFixed(digits)}%`;
+}
+
+/**
+ * Folds a new purchase into a holding's average buy price.
+ *
+ * An unknown average (0) on existing shares can't be weighted, so those shares
+ * are assumed to cost the same as this lot — set "Bought at" first to avoid that.
+ */
+export function averageIn(
+  shares: number,
+  buyPrice: number,
+  qty: number,
+  price: number,
+): { shares: number; buyPrice: number } {
+  const total = shares + qty;
+  if (total <= 0) return { shares: 0, buyPrice: 0 };
+  const oldCost = buyPrice > 0 ? buyPrice : price;
+  return { shares: total, buyPrice: (shares * oldCost + qty * price) / total };
+}
+
+/** Removes sold shares. Selling doesn't change what the remaining shares cost. */
+export function sellOut(
+  shares: number,
+  buyPrice: number,
+  qty: number,
+): { shares: number; buyPrice: number } {
+  const left = Math.max(shares - qty, 0);
+  return { shares: left, buyPrice: left > 0 ? buyPrice : 0 };
 }

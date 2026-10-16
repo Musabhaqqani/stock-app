@@ -1,8 +1,6 @@
-import { Search, Trash2 } from "lucide-react";
-import { deleteStockAction } from "@/app/actions";
+import { Search } from "lucide-react";
 import { formatINR, formatPct, type HoldingRow } from "@/lib/calc";
 import { EditableNumber } from "@/components/editable-number";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -15,6 +13,8 @@ import {
 import { cn } from "@/lib/utils";
 import { ColumnInfo } from "@/components/column-info";
 import { AddStockDialog } from "@/components/add-stock-dialog";
+import { DeleteStockButton } from "@/components/delete-stock-button";
+import { RecordTrade } from "@/components/record-trade";
 
 /** Marks a price the fetcher hasn't been able to refresh recently. */
 function staleness(lastPriceUpdate: Date | string | null): string | null {
@@ -23,23 +23,6 @@ function staleness(lastPriceUpdate: Date | string | null): string | null {
   if (hours < 1) return null;
   if (hours < 24) return `${Math.floor(hours)}h old`;
   return `${Math.floor(hours / 24)}d old`;
-}
-
-function DeleteButton({ id, name }: { id: string; name: string }) {
-  return (
-    <form action={deleteStockAction}>
-      <input type="hidden" name="id" value={id} />
-      <Button
-        type="submit"
-        variant="ghost"
-        size="icon"
-        aria-label={`Remove ${name}`}
-        className="size-8 text-muted-foreground hover:text-destructive"
-      >
-        <Trash2 className="size-4" />
-      </Button>
-    </form>
-  );
 }
 
 function GapValue({ gap }: { gap: number }) {
@@ -53,6 +36,23 @@ function GapValue({ gap }: { gap: number }) {
       {gap >= 0 ? "+" : ""}
       {formatPct(gap)}
     </span>
+  );
+}
+
+function PnlValue({ pnl, invested }: { pnl: number | null; invested: number }) {
+  if (pnl === null) return null;
+  const pct = invested > 0 ? (pnl / invested) * 100 : 0;
+  return (
+    <div
+      className={cn(
+        "font-mono text-[10px] tabular-nums",
+        pnl >= 0 ? "text-under" : "text-destructive",
+      )}
+    >
+      {pnl >= 0 ? "+" : ""}
+      {formatINR(pnl)} ({pnl >= 0 ? "+" : ""}
+      {formatPct(pct)})
+    </div>
   );
 }
 
@@ -77,7 +77,7 @@ export function HoldingsTable({ rows }: { rows: HoldingRow[] }) {
   return (
     <>
       {/*
-        Phones get cards, not a table: nine numeric columns cannot compress to
+        Phones get cards, not a table: ten numeric columns cannot compress to
         360px without either horizontal scrolling or unreadable text.
       */}
       <ul className="divide-y divide-border md:hidden">
@@ -93,10 +93,17 @@ export function HoldingsTable({ rows }: { rows: HoldingRow[] }) {
                     {row.ticker} · {row.theme}
                   </div>
                 </div>
-                <DeleteButton id={row.id} name={row.name} />
+                <RecordTrade
+                  id={row.id}
+                  name={row.name}
+                  shares={row.shares}
+                  buyPrice={row.buyPrice}
+                  price={row.price}
+                />
+                <DeleteStockButton id={row.id} name={row.name} />
               </div>
 
-              <div className="grid grid-cols-3 gap-3 text-sm">
+              <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
                 <div>
                   <div className="text-xs text-muted-foreground">
                     <ColumnInfo column="price" align="start" />
@@ -132,6 +139,22 @@ export function HoldingsTable({ rows }: { rows: HoldingRow[] }) {
 
                 <div>
                   <div className="text-xs text-muted-foreground">
+                    <ColumnInfo column="buyPrice" align="start" />
+                  </div>
+                  <EditableNumber
+                    id={row.id}
+                    field="buyPrice"
+                    value={row.buyPrice}
+                    step="0.05"
+                    label={`Buy price for ${row.name}`}
+                    prefix="₹"
+                    align="left"
+                    className="w-full"
+                  />
+                </div>
+
+                <div>
+                  <div className="text-xs text-muted-foreground">
                     <ColumnInfo column="target" align="center" />
                   </div>
                   <EditableNumber
@@ -151,6 +174,7 @@ export function HoldingsTable({ rows }: { rows: HoldingRow[] }) {
                   {formatINR(row.currentValue)} · now{" "}
                   {formatPct(row.currentWeightPct)}
                 </span>
+                <PnlValue pnl={row.pnl} invested={row.investedValue} />
                 <span className="flex items-center gap-2">
                   <GapValue gap={row.gap} />
                   {row.sharesToBuyNext > 0 && (
@@ -181,6 +205,9 @@ export function HoldingsTable({ rows }: { rows: HoldingRow[] }) {
                 <ColumnInfo column="shares" />
               </TableHead>
               <TableHead className="text-right">
+                <ColumnInfo column="buyPrice" />
+              </TableHead>
+              <TableHead className="text-right">
                 <ColumnInfo column="value" />
               </TableHead>
               <TableHead className="text-right">
@@ -195,7 +222,7 @@ export function HoldingsTable({ rows }: { rows: HoldingRow[] }) {
               <TableHead className="text-right">
                 <ColumnInfo column="toBuy" />
               </TableHead>
-              <TableHead className="w-10" />
+              <TableHead className="w-20" />
             </TableRow>
           </TableHeader>
 
@@ -238,8 +265,20 @@ export function HoldingsTable({ rows }: { rows: HoldingRow[] }) {
                     />
                   </TableCell>
 
+                  <TableCell className="text-right">
+                    <EditableNumber
+                      id={row.id}
+                      field="buyPrice"
+                      value={row.buyPrice}
+                      step="0.05"
+                      label={`Buy price for ${row.name}`}
+                      className="w-24"
+                    />
+                  </TableCell>
+
                   <TableCell className="num">
                     {formatINR(row.currentValue)}
+                    <PnlValue pnl={row.pnl} invested={row.investedValue} />
                   </TableCell>
                   <TableCell className="num">
                     {formatPct(row.currentWeightPct)}
@@ -269,7 +308,16 @@ export function HoldingsTable({ rows }: { rows: HoldingRow[] }) {
                   </TableCell>
 
                   <TableCell>
-                    <DeleteButton id={row.id} name={row.name} />
+                    <div className="flex">
+                      <RecordTrade
+                        id={row.id}
+                        name={row.name}
+                        shares={row.shares}
+                        buyPrice={row.buyPrice}
+                        price={row.price}
+                      />
+                      <DeleteStockButton id={row.id} name={row.name} />
+                    </div>
                   </TableCell>
                 </TableRow>
               );

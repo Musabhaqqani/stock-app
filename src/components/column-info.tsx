@@ -27,10 +27,17 @@ export const COLUMN_INFO = {
     what: "How many whole shares of this stock you currently own.",
     how: "You enter this yourself — the app has no brokerage connection. Editing it recalculates every other column on this row.",
   },
+  buyPrice: {
+    title: "Bought at",
+    what: "The average price you paid per share.",
+    formula: "(old shares × old avg + new shares × new price) ÷ total shares",
+    how: "Use the ⇄ button on a holding each time you buy or sell — buying re-averages this, selling leaves it unchanged. You can also type it directly. Leave it at 0 if you don't want profit/loss tracked for this stock. It only affects profit/loss — weights and targets use today's price.",
+  },
   value: {
     title: "Value",
     what: "What your holding in this stock is worth right now.",
     formula: "price × shares",
+    note: "When a buy price is set, the line below shows profit/loss: value − (bought at × shares).",
   },
   now: {
     title: "Now",

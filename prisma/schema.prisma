@@ -38,6 +38,8 @@ model Stock {
   targetPct       Float
   price           Float
   shares          Int       @default(0)
+  /// Average price paid per share, in INR. 0 means not entered yet.
+  buyPrice        Float     @default(0)
   /// Set when a price came from the live fetcher; null means the price is seed
   /// data or a manual entry that has never been refreshed.
   lastPriceUpdate DateTime?
