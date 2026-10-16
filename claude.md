@@ -93,6 +93,8 @@ Fallback is **per ticker**: whatever Upstox doesn't return is asked of Yahoo. Bo
 
 See [DECISIONS.md](DECISIONS.md) for why the price source, database, auth model and caching were chosen, and what to do when the price endpoint breaks.
 
+**Sentiment (`/sentiment`)** is Google News RSS (no key) + Reddit search (only when Reddit keys are set — Reddit gates API apps behind approval and 403s keyless access) + Gemini, in [sentiment.ts](src/lib/sentiment.ts). It reports social mood, never a price forecast — that's the no-advice non-goal — and stays out of buy-next. It runs only from the Analyze button, never during render. Any NSE stock can be analysed (holdings dropdown or the shared stock search), but only by signed-in users, and the ticker and name are validated in the action. Model output passes through `parseReport` (untrusted: enums coerced, score clamped, post links resolved by index from our own list). Needs `GEMINI_API_KEY`; the Reddit keys are optional. The cache is per process with a 1 h TTL.
+
 ## Gotcha worth knowing
 
 A holding can be **overweight by current weight yet still appear in "buy next"**. `gap` measures against today's portfolio value; `sharesToBuyNext` measures against the total investment target. Early on, when little is invested, an expensive stock dominates current weight while still sitting below its target value. Both figures are correct — `calc.test.ts` pins this case, and [column-info.tsx](src/components/column-info.tsx) explains it to users in the Gap and To-buy popovers.
