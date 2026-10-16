@@ -2,7 +2,7 @@
 
 import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Table2, Users, LogOut, Loader2 } from "lucide-react";
+import { LayoutDashboard, Table2, MessageSquareText, Users, LogOut, Loader2 } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -21,6 +21,7 @@ import { logoutAction } from "@/app/actions";
 const NAV = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/holdings", label: "Holdings", icon: Table2 },
+  { href: "/sentiment", label: "Sentiment", icon: MessageSquareText },
 ];
 
 /**
