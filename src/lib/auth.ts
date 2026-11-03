@@ -1,9 +1,12 @@
 import "server-only";
 
+import { randomBytes } from "crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "./db";
+import { GUEST_STOCKS } from "./seed-data";
 import { SESSION_COOKIE, createSessionToken } from "./session";
 import { loadSession } from "./session-data";
 
@@ -33,7 +36,48 @@ export async function login(
 
   if (!(await bcrypt.compare(passphrase, user.passphraseHash))) return false;
 
-  const { token, expiresAt } = createSessionToken(user.id);
+  await startSession(user.id);
+  return true;
+}
+
+const GUEST_TTL_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Signs the visitor into a fresh demo account, one per click, so guests never
+ * see or overwrite each other's edits. The empty passphrase hash never matches
+ * bcrypt, so the account is reachable only through the cookie set here.
+ *
+ * ponytail: no rate limit — each click creates a user + holdings, bounded only
+ * by the 24 h sweep. Add an IP throttle if the button gets abused.
+ */
+export async function loginAsGuest(): Promise<void> {
+  const user = await prisma.user.create({
+    data: {
+      name: `Guest ${randomBytes(3).toString("hex")}`,
+      passphraseHash: "",
+      isGuest: true,
+      stocks: { createMany: { data: GUEST_STOCKS } },
+    },
+    select: { id: true },
+  });
+  await startSession(user.id);
+
+  // Sweep expired guests after the response, so it costs the visitor nothing.
+  // Their holdings go with them via the cascade.
+  after(() =>
+    prisma.user
+      .deleteMany({
+        where: {
+          isGuest: true,
+          createdAt: { lt: new Date(Date.now() - GUEST_TTL_MS) },
+        },
+      })
+      .catch(() => {}),
+  );
+}
+
+async function startSession(userId: string): Promise<void> {
+  const { token, expiresAt } = createSessionToken(userId);
   const store = await cookies();
   store.set(SESSION_COOKIE, token, {
     httpOnly: true,
@@ -42,8 +86,6 @@ export async function login(
     path: "/",
     expires: expiresAt,
   });
-
-  return true;
 }
 
 export async function logout(): Promise<void> {

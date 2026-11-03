@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth";
-import { LoginForm } from "./login-form";
+import { LoginForm, SubmitButton } from "./login-form";
+import { guestLoginAction } from "./actions";
 import { Card, CardContent } from "@/components/ui/card";
 
 export default async function LoginPage() {
@@ -32,6 +33,17 @@ export default async function LoginPage() {
         <p className="mt-4 text-center text-xs text-muted-foreground">
           Access is granted by an admin. Ask them for your credentials.
         </p>
+
+        <form action={guestLoginAction} className="mt-6 space-y-2">
+          <SubmitButton
+            variant="outline"
+            label="Try the demo — no login"
+            pendingLabel="Setting up demo…"
+          />
+          <p className="text-center text-xs text-muted-foreground">
+            A sample portfolio to play with. Deleted after 24 hours.
+          </p>
+        </form>
       </div>
     </main>
   );

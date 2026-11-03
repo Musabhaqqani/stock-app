@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { login } from "@/lib/auth";
+import { login, loginAsGuest } from "@/lib/auth";
 
 export type LoginState = { error: string | null };
 
@@ -21,5 +21,10 @@ export async function loginAction(
     return { error: "That name and passphrase don't match." };
   }
 
+  redirect("/");
+}
+
+export async function guestLoginAction() {
+  await loginAsGuest();
   redirect("/");
 }

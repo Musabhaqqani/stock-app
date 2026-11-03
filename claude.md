@@ -81,6 +81,8 @@ Fallback is **per ticker**: whatever Upstox doesn't return is asked of Yahoo. Bo
 
 **Auth is allowlist-only and there is still no public signup.** Users are created either by `scripts/add-user.ts` or by an existing admin at `/users` — both require an authenticated admin; neither is reachable from the login page. [src/lib/session.ts](src/lib/session.ts) does cookie signing (pure, no I/O); [src/lib/auth.ts](src/lib/auth.ts) does login and the `requireUser()` / `requireAdmin()` gates.
 
+**Guest demo is the one public way in.** The login page's "Try the demo" button calls `loginAsGuest()`, which creates a fresh `isGuest` user per click with `GUEST_STOCKS` holdings and an empty passphrase hash (so it can't be signed into by passphrase). Guests are never admins, are hidden from `/users`, and are deleted 24 h after creation by a sweep that runs in `after()` on each guest login. Guests can use search, price refresh and sentiment like anyone signed in. There's no rate limit.
+
 **Hiding a nav link is not access control.** `/users` and every action in [users/actions.ts](src/app/(app)/users/actions.ts) call `requireAdmin()` server-side. Self-demotion and self-deletion are blocked there too, not just in the menu.
 
 **Portfolios are personal: new users start with zero holdings.** Nothing is seeded, by either the admin UI or `user:add` — every holding on a dashboard is one that user added. `SEED_STOCKS` in [seed-data.ts](src/lib/seed-data.ts) exists only as the historical bootstrap for the first account; do not wire it into user creation. Empty states on both `/` and `/holdings` route people to the stock search.
