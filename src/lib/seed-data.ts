@@ -18,6 +18,20 @@ export type SeedStock = {
 
 export const DEFAULT_TOTAL_INVESTMENT_TARGET = 1_000_000; // INR
 
+/**
+ * Demo portfolio for guest accounts only. Mixed over/underweight positions and
+ * gains/losses so every part of the dashboard has something to show. Targets
+ * sum to 100. Prices are refreshed on first load like any other holding.
+ */
+export const GUEST_STOCKS: (SeedStock & { buyPrice: number })[] = [
+  { name: "Bharti Airtel", ticker: "BHARTIARTL", theme: "Digital Infrastructure", targetPct: 20, price: 1924, shares: 10, buyPrice: 1650 },
+  { name: "ICICI Bank", ticker: "ICICIBANK", theme: "Financial Infrastructure", targetPct: 20, price: 1423, shares: 6, buyPrice: 1280 },
+  { name: "Titan Company", ticker: "TITAN", theme: "Premium Consumer", targetPct: 15, price: 5090, shares: 4, buyPrice: 5300 },
+  { name: "Larsen & Toubro", ticker: "LT", theme: "Engineering & Infrastructure", targetPct: 15, price: 4037, shares: 1, buyPrice: 3900 },
+  { name: "Dixon Technologies", ticker: "DIXON", theme: "Electronics Manufacturing", targetPct: 15, price: 14023, shares: 1, buyPrice: 15200 },
+  { name: "Bharat Electronics", ticker: "BEL", theme: "Strategic Technology & Defence", targetPct: 15, price: 406, shares: 40, buyPrice: 310 },
+];
+
 export const SEED_STOCKS: SeedStock[] = [
   { name: "Bharti Airtel", ticker: "BHARTIARTL", theme: "Digital Infrastructure", targetPct: 7, price: 1924, shares: 1 },
   { name: "Titan Company", ticker: "TITAN", theme: "Premium Consumer", targetPct: 7, price: 5090, shares: 1 },

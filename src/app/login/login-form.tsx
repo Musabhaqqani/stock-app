@@ -9,11 +9,19 @@ import { loginAction, type LoginState } from "./actions";
 
 const initialState: LoginState = { error: null };
 
-function SubmitButton() {
+export function SubmitButton({
+  label,
+  pendingLabel,
+  variant,
+}: {
+  label: string;
+  pendingLabel: string;
+  variant?: "default" | "outline";
+}) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending} className="w-full">
-      {pending ? "Checking…" : "Sign in"}
+    <Button type="submit" variant={variant} disabled={pending} className="w-full">
+      {pending ? pendingLabel : label}
     </Button>
   );
 }
@@ -53,7 +61,7 @@ export function LoginForm() {
         </p>
       )}
 
-      <SubmitButton />
+      <SubmitButton label="Sign in" pendingLabel="Checking…" />
     </form>
   );
 }

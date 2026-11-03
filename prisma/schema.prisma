@@ -23,6 +23,9 @@ model User {
   /// Admins can add and remove other users. Non-admins only see their own
   /// portfolio. The first user created by the CLI is an admin.
   isAdmin        Boolean            @default(false)
+  /// Throwaway demo account from the login page's guest button. Has no usable
+  /// passphrase and is deleted 24 h after creation.
+  isGuest        Boolean            @default(false)
   createdAt      DateTime           @default(now())
   stocks         Stock[]
   settings       PortfolioSettings?
